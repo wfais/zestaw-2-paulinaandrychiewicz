@@ -4,7 +4,7 @@ from collections import Counter
 URL = "https://pl.wikipedia.org/api/rest_v1/page/random/summary"
 N = 100  # liczba losowań
 HEADERS = {
-    "User-Agent": "wp-edu-wiki-stats/0.1 (kontakt: twoj-email@domena)",
+    "User-Agent": "wp-edu-wiki-stats/0.1 (paulina.andrychiewicz@student.uj.edu.pl)",
     "Accept": "application/json",
 }
 
@@ -23,7 +23,12 @@ def selekcja(text: str):
     # Przykład:
     #  selekcja("Ala ma 3 koty i 2 psy oraz żółw")
     #     -> ["koty", "oraz", "żółw"]
-    pass
+    words = []
+    for word in WORD_RE.findall(text):
+        word_lower = word.lower()
+        if len(word_lower) > 3:
+            words.append(word_lower)
+    return words
 
 
 def ramka(text: str, width: int = 80) -> str:
@@ -38,7 +43,12 @@ def ramka(text: str, width: int = 80) -> str:
     #
     # Przykład:
     #   ramka("Kot", width=10)  ->  "[  Kot   ]"   (łącznie 10 znaków)
-    pass
+    szerokosc_tekstu = width - 2
+    
+    if len(text) > szerokosc_tekstu:
+        text = text[:szerokosc_tekstu - 1] + "…"
+
+    return f"[{text.center(szerokosc_tekstu)}]"    
 
 
 def main():
@@ -74,13 +84,27 @@ def main():
         #  - zwiększ licznik 'pobrane' (udało się przetworzyć jedną próbkę)
         #  - opcjonalnie mała przerwa: time.sleep(0.05)
 
+        title = data['title'] if 'title' in data else ""
+        linia = "\r" + ramka(title, 80)
+        print(linia, end="", flush=True)
 
-    print(f"Pobrano: {pobrane}")
-    print(f"#Słowa:  {licznik_slow}")
-    print(f"Unikalne:  {len(cnt)}\n")
+        extract = data['extract'] if 'extract' in data else ""
+        lista_slow = selekcja(extract)
+        cnt.update(lista_slow)
+        licznik_slow += len(lista_slow)
+        pobrane += 1
+        time.sleep(0.05)
 
-    print("Najczęstsze 15 słów:")
+    print()
+    print(f"Pobrano wpisów: {pobrane}")
+    print(f"Słów (≥4) łącznie:  {licznik_slow}")
+    print(f"Unikalnych (≥4):  {len(cnt)}\n")
+
+    print("Top 15 słów (≥4):")
     # tu wypisz w pętli, korzystając np. z most_common(15)
+
+    for word, count in cnt.most_common(15):
+        print(f"{word}: {count}")
 
 if __name__ == "__main__":
     main()
